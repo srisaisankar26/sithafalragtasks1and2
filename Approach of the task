@@ -1,0 +1,84 @@
+Approach for the Code
+This code demonstrates how to process a PDF document, extract text, create semantic embeddings, and perform a similarity search to answer user queries. Here's the detailed breakdown of the approach:
+
+1. Model and Library Setup
+Libraries Used:
+faiss: A library for efficient similarity search and clustering of dense vectors.
+sentence_transformers: To encode textual data into dense embeddings for semantic similarity.
+PyMuPDF (fitz): For PDF text extraction.
+requests and io: To handle both local and remote PDFs (via URLs).
+pickle: To cache embeddings for faster reuse.
+Model Initialization:
+The SentenceTransformer model (all-MiniLM-L6-v2) is used to generate embeddings for textual data. This is a lightweight transformer-based model optimized for semantic similarity tasks.
+
+2. Extracting Text from PDF
+Function: extract_text_from_pdf(pdf_path)
+Extracts text from a PDF file, handling both local files and URLs.
+If the pdf_path starts with "http", the PDF is fetched via HTTP, converted to a byte stream, and processed.
+For local files, it directly reads the PDF using fitz.
+
+3. Chunking the Text
+Function: chunk_text(text, chunk_size=500)
+Splits the extracted text into smaller chunks (default size: 500 words).
+These smaller chunks ensure that the embeddings are more manageable and relevant for semantic search.
+
+4. Creating Embeddings
+Function: create_embeddings(chunks, embeddings_cache_path="embeddings.pkl")
+Purpose: Converts text chunks into dense vector representations (embeddings).
+If embeddings are cached (stored as a .pkl file), it loads them to save computation time.
+Otherwise, embeddings are created using the SentenceTransformer model and stored in a pickle file for future use.
+
+5. Storing Embeddings in FAISS
+Function: store_embeddings_in_faiss(embeddings)
+Purpose: Adds the embeddings to a FAISS index for similarity search.
+Creates an IndexFlatL2 index for L2 (Euclidean distance) similarity.
+Converts the embeddings into a NumPy array (float32 type) and adds them to the index.
+
+6. Performing Similarity Search
+Function: search_embeddings(query, index, chunks, top_k=3)
+Purpose: Finds the top k text chunks most relevant to the user’s query.
+Steps:
+Encodes the user query into an embedding using the same SentenceTransformer model.
+Performs a similarity search on the FAISS index to find the closest embeddings to the query.
+Returns the corresponding text chunks.
+
+7. Generating a Response
+Function: generate_response(user_query, relevant_chunks)
+Purpose: Combines the most relevant text chunks into a context and formulates a response.
+The response structure includes:
+The user’s query.
+The most relevant chunks from the PDF content.
+
+8. Pipeline Execution
+Function: run_pipeline(pdf_path, user_query)
+Combines all steps into a single pipeline:
+Text Extraction: Extract text from the given PDF (URL or local).
+Text Chunking: Split the text into manageable pieces.
+Embedding Creation: Generate and/or load cached embeddings.
+Index Storage: Store embeddings in FAISS for efficient retrieval.
+Similarity Search: Retrieve the most relevant chunks for the user query.
+Response Generation: Generate a meaningful response based on the relevant chunks.
+
+9. Example Execution
+Input PDF:
+A remote PDF document located at https://www.hunter.cuny.edu/dolciani/....
+This PDF is downloaded, processed, and text is extracted.
+User Query:
+"From page 2 get the exact unemployment information based on type of degree input"
+The pipeline processes the query to fetch the relevant content from the PDF.
+
+Output:
+The system identifies and retrieves the text chunks that are semantically most relevant to the query and includes them in the response.
+
+Key Features
+Semantic Similarity: Uses embeddings to match the query with contextually relevant parts of the text.
+Efficient Search: FAISS ensures fast and scalable similarity searches.
+Scalability: Handles large PDFs by splitting them into chunks.
+Caching: Embedding caching avoids redundant computation.
+Flexibility: Handles both local and remote PDFs seamlessly.
+
+Use Case
+This pipeline can be used for:
+Extracting insights from large PDF documents.
+Building question-answering systems for reports, research papers, or manuals.
+Automating document analysis tasks for various industries.
